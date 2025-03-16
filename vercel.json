@@ -4,13 +4,9 @@
     {
       "src": "quiz_project/wsgi.py",
       "use": "@vercel/python",
-      "config": { "maxLambdaSize": "15mb", "runtime": "python3.9" }
-    },
-    {
-      "src": "vercel.sh",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "staticfiles"
+      "config": { 
+        "maxLambdaSize": "15mb", 
+        "runtime": "python3.9"
       }
     }
   ],
@@ -23,5 +19,6 @@
       "src": "/(.*)",
       "dest": "quiz_project/wsgi.py"
     }
-  ]
+  ],
+  "buildCommand": "chmod +x build.sh && ./build.sh"
 } 
