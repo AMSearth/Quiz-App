@@ -1,8 +1,16 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "quiz_project/wsgi.py",
+      "src": "vercel.py",
       "use": "@vercel/python"
+    },
+    {
+      "src": "build.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "static"
+      }
     }
   ],
   "routes": [
@@ -12,7 +20,10 @@
     },
     {
       "src": "/(.*)",
-      "dest": "quiz_project/wsgi.py"
+      "dest": "vercel.py"
     }
-  ]
+  ],
+  "env": {
+    "PYTHONUNBUFFERED": "1"
+  }
 } 
