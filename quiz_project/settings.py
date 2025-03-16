@@ -143,9 +143,11 @@ STATICFILES_DIRS = [
 if os.environ.get('VERCEL'):
     STATIC_ROOT = os.path.join(BASE_DIR, 'static')
     STATICFILES_DIRS = []
-
-# Enable WhiteNoise compression and caching
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    # Simplified static files handling for Vercel
+    STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+else:
+    # Enable WhiteNoise compression and caching for local development
+    STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
