@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Taking Quiz: {{ quiz.title }} - Quiz App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">{{ quiz.title }}</h4>
+                <div id="timer" class="badge bg-warning text-dark p-2">
+                    Time Remaining: <span id="minutes">--</span>:<span id="seconds">--</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="progress mb-4">
+                    <div class="progress-bar" role="progressbar" style="width: {{ question_number|floatformat:0 }}%;" aria-valuenow="{{ question_number|floatformat:0 }}" aria-valuemin="0" aria-valuemax="100">
+                        Question {{ question_number }} of {{ total_questions }}
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <h5 class="card-title">{{ question.text }}</h5>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {{ form.errors }}
+                        
+                        {% for choice in form.selected_choice %}
+                            <div class="form-check mb-2">
+                                {{ choice.tag }}
+                                <label class="form-check-label" for="{{ choice.id_for_label }}">
+                                    {{ choice.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Next Question</button>
+                    
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#submitQuizModal">
+                        Submit Quiz
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submit Quiz Modal -->
+<div class="modal fade" id="submitQuizModal" tabindex="-1" aria-labelledby="submitQuizModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="submitQuizModalLabel">Submit Quiz</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to submit this quiz? You will not be able to change your answers after submission.</p>
+                <p>You have answered {% with answered=question_number|add:"-1" %}{{ answered }}{% endwith %} out of {{ total_questions }} questions.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" action="{% url 'submit_quiz' attempt.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Submit Quiz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Timer functionality
+        let timeRemaining = {{ time_remaining }};
+        const timerElement = document.getElementById('timer');
+        const minutesElement = document.getElementById('minutes');
+        const secondsElement = document.getElementById('seconds');
+        
+        function updateTimer() {
+            const minutes = Math.floor(timeRemaining / 60);
+            const seconds = Math.floor(timeRemaining % 60);
+            
+            minutesElement.textContent = minutes.toString().padStart(2, '0');
+            secondsElement.textContent = seconds.toString().padStart(2, '0');
+            
+            if (timeRemaining <= 60) {
+                timerElement.classList.remove('bg-warning');
+                timerElement.classList.add('bg-danger', 'text-white');
+            }
+            
+            if (timeRemaining <= 0) {
+                // Time's up, submit the quiz
+                document.querySelector('form[action="{% url "submit_quiz" attempt.id %}"]').submit();
+            }
+            
+            timeRemaining--;
+        }
+        
+        // Update timer immediately and then every second
+        updateTimer();
+        const timerInterval = setInterval(updateTimer, 1000);
+        
+        // Check time with server every 30 seconds
+        function checkTimeWithServer() {
+            fetch('{% url "check_time" attempt.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.redirect) {
+                    window.location.href = data.redirect;
+                } else if (data.time_remaining) {
+                    timeRemaining = data.time_remaining;
+                }
+            });
+        }
+        
+        const serverCheckInterval = setInterval(checkTimeWithServer, 30000);
+        
+        // Clean up intervals when page is unloaded
+        window.addEventListener('beforeunload', function() {
+            clearInterval(timerInterval);
+            clearInterval(serverCheckInterval);
+        });
+    });
+</script>
+{% endblock %} 

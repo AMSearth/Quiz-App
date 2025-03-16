@@ -1,0 +1,255 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Quiz App{% endblock %}
+
+{% block hero %}
+<section class="hero-section">
+    <div class="container text-center">
+        <h1 class="hero-title">Welcome to <span class="text-warning">Quiz App</span></h1>
+        <p class="hero-subtitle">An interactive platform for creating and taking quizzes online</p>
+        <div class="d-flex justify-content-center gap-3">
+            {% if not user.is_authenticated %}
+            <a href="{% url 'login' %}" class="btn btn-light hero-btn"><i class="fas fa-sign-in-alt me-2"></i>Login</a>
+            <a href="{% url 'register' %}" class="btn btn-outline-light hero-btn"><i class="fas fa-user-plus me-2"></i>Register</a>
+            {% else %}
+                {% if user_profile.user_type == 'admin' %}
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-light hero-btn"><i class="fas fa-tachometer-alt me-2"></i>Admin Dashboard</a>
+                {% elif user_profile.user_type == 'teacher' %}
+                <a href="{% url 'teacher_dashboard' %}" class="btn btn-light hero-btn"><i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard</a>
+                {% elif user_profile.user_type == 'student' %}
+                <a href="{% url 'student_dashboard' %}" class="btn btn-light hero-btn"><i class="fas fa-user-graduate me-2"></i>Student Dashboard</a>
+                {% endif %}
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<!-- User Roles Section -->
+<section class="info-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Choose Your Role</h2>
+            <p class="lead">Our platform offers different features for different user types</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card mb-4 h-100 info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-wrapper mb-3">
+                            <i class="fas fa-user-shield fa-4x text-primary"></i>
+                        </div>
+                        <h3 class="card-title">Admin</h3>
+                        <p class="card-text">Create teacher and student accounts, manage users, and oversee the entire quiz system.</p>
+                        <a href="{% url 'login' %}" class="btn btn-primary mt-3"><i class="fas fa-sign-in-alt me-2"></i>Admin Login</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4 h-100 info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-wrapper mb-3">
+                            <i class="fas fa-chalkboard-teacher fa-4x text-success"></i>
+                        </div>
+                        <h3 class="card-title">Teacher</h3>
+                        <p class="card-text">Create and manage quizzes, add questions, set time limits, and view student results.</p>
+                        <a href="{% url 'login' %}" class="btn btn-success mt-3"><i class="fas fa-sign-in-alt me-2"></i>Teacher Login</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card mb-4 h-100 info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="icon-wrapper mb-3">
+                            <i class="fas fa-user-graduate fa-4x text-info"></i>
+                        </div>
+                        <h3 class="card-title">Student</h3>
+                        <p class="card-text">Take quizzes, view your results, track your progress, and improve your knowledge.</p>
+                        <a href="{% url 'login' %}" class="btn btn-info mt-3"><i class="fas fa-sign-in-alt me-2"></i>Student Login</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="info-section bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Why Choose Our Quiz App?</h2>
+            <p class="lead">Discover the features that make our platform stand out</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-3">
+                <div class="feature-item">
+                    <i class="fas fa-bolt info-icon text-warning"></i>
+                    <h4>Fast & Responsive</h4>
+                    <p>Works on all devices with a smooth, responsive interface that adapts to any screen size.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-item">
+                    <i class="fas fa-lock info-icon text-danger"></i>
+                    <h4>Secure</h4>
+                    <p>Your data and quiz results are always protected with our advanced security measures.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-item">
+                    <i class="fas fa-chart-line info-icon text-success"></i>
+                    <h4>Track Progress</h4>
+                    <p>Monitor improvement with detailed analytics and performance tracking over time.</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="feature-item">
+                    <i class="fas fa-users info-icon text-primary"></i>
+                    <h4>User-Friendly</h4>
+                    <p>Intuitive interface for all user types, making quiz creation and taking simple.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="info-section">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">How It Works</h2>
+            <p class="lead">Get started with our Quiz App in just a few simple steps</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 60px; height: 60px;">
+                            <h3 class="m-0">1</h3>
+                        </div>
+                        <h4>Create an Account</h4>
+                        <p>Register as a student, teacher, or admin based on your role.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 60px; height: 60px;">
+                            <h3 class="m-0">2</h3>
+                        </div>
+                        <h4>Create Quizzes</h4>
+                        <p>Teachers can create quizzes with various question types.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 60px; height: 60px;">
+                            <h3 class="m-0">3</h3>
+                        </div>
+                        <h4>Take Quizzes</h4>
+                        <p>Students can take quizzes and get instant feedback.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="card info-card">
+                    <div class="card-body text-center p-4">
+                        <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 60px; height: 60px;">
+                            <h3 class="m-0">4</h3>
+                        </div>
+                        <h4>Track Results</h4>
+                        <p>View detailed results and track your progress over time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="info-section bg-light">
+    <div class="container text-center">
+        <h2 class="mb-4">Ready to Get Started?</h2>
+        <p class="lead mb-4">Join our platform today and experience the best way to create and take quizzes online.</p>
+        <div class="d-flex justify-content-center gap-3">
+            {% if not user.is_authenticated %}
+            <a href="{% url 'register' %}" class="btn btn-primary btn-lg"><i class="fas fa-user-plus me-2"></i>Register Now</a>
+            <a href="{% url 'login' %}" class="btn btn-outline-primary btn-lg"><i class="fas fa-sign-in-alt me-2"></i>Login</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        padding: 3rem 0;
+        animation: fadeIn 1s ease-in-out;
+    }
+    
+    .icon-wrapper {
+        height: 100px;
+        width: 100px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(0, 0, 0, 0.03);
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover .icon-wrapper {
+        transform: scale(1.1);
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .features-section {
+        animation: slideInUp 0.8s ease-in-out;
+    }
+    
+    .benefits-section {
+        animation: slideInUp 1s ease-in-out;
+        padding: 2rem;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: 10px;
+    }
+    
+    .feature-item {
+        padding: 1.5rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        border-radius: 10px;
+    }
+    
+    .feature-item:hover {
+        background-color: white;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+        transform: translateY(-5px);
+    }
+    
+    @keyframes slideInUp {
+        from {
+            transform: translateY(50px);
+            opacity: 0;
+        }
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+</style>
+{% endblock %} 

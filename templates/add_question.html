@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Add Question - {{ quiz.title }} - Quiz App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Add Question to: {{ quiz.title }}</h4>
+                <a href="{% url 'edit_quiz' quiz.id %}" class="btn btn-light btn-sm">Back to Quiz</a>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ question_form.text.id_for_label }}" class="form-label">Question Text</label>
+                        {{ question_form.text.errors }}
+                        <textarea name="{{ question_form.text.name }}" id="{{ question_form.text.id_for_label }}" class="form-control" rows="3">{{ question_form.text.value|default:'' }}</textarea>
+                    </div>
+                    
+                    <h5 class="mt-4 mb-3">Answer Choices</h5>
+                    <div class="alert alert-info">
+                        <p><strong>Note:</strong> You must provide at least 2 choices and mark at least one as correct.</p>
+                    </div>
+                    
+                    {{ choice_formset.management_form }}
+                    
+                    <div id="choices-container">
+                        {% for choice_form in choice_formset %}
+                            <div class="card mb-3 choice-form">
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-9">
+                                            <div class="mb-2">
+                                                <label for="{{ choice_form.text.id_for_label }}" class="form-label">Choice Text</label>
+                                                {{ choice_form.text.errors }}
+                                                <input type="text" name="{{ choice_form.text.html_name }}" id="{{ choice_form.text.id_for_label }}" class="form-control" value="{{ choice_form.text.value|default:'' }}">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <div class="form-check mt-4">
+                                                <input type="checkbox" name="{{ choice_form.is_correct.html_name }}" id="{{ choice_form.is_correct.id_for_label }}" class="form-check-input" {% if choice_form.is_correct.value %}checked{% endif %}>
+                                                <label for="{{ choice_form.is_correct.id_for_label }}" class="form-check-label">Correct Answer</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% for hidden_field in choice_form.hidden_fields %}
+                                        {{ hidden_field }}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success">Save Question</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add Bootstrap classes to form fields
+        const formFields = document.querySelectorAll('input[type="text"], textarea');
+        formFields.forEach(field => {
+            if (!field.classList.contains('form-control')) {
+                field.classList.add('form-control');
+            }
+        });
+    });
+</script>
+{% endblock %} 

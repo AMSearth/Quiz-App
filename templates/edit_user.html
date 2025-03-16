@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User - Quiz App{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Edit User: {{ user_to_edit.username }}</h4>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-light btn-sm">Back to Dashboard</a>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" value="{{ user_to_edit.username }}" required>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="first_name" class="form-label">First Name</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" value="{{ user_to_edit.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_name" class="form-label">Last Name</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" value="{{ user_to_edit.last_name }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" value="{{ user_to_edit.email }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password (leave blank to keep current)</label>
+                        <input type="password" class="form-control" id="new_password" name="new_password">
+                        <div class="form-text">Only fill this if you want to change the user's password.</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="user_type" class="form-label">User Type</label>
+                        <select class="form-select" id="user_type" name="user_type" required>
+                            <option value="teacher" {% if user_profile.user_type == 'teacher' %}selected{% endif %}>Teacher</option>
+                            <option value="student" {% if user_profile.user_type == 'student' %}selected{% endif %}>Student</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="approval_status" class="form-label">Approval Status</label>
+                        <select class="form-select" id="approval_status" name="approval_status" required>
+                            <option value="pending" {% if user_profile.approval_status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="approved" {% if user_profile.approval_status == 'approved' %}selected{% endif %}>Approved</option>
+                            <option value="rejected" {% if user_profile.approval_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                        </select>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
