@@ -3,7 +3,7 @@ from django.contrib.auth import login, authenticate, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
-from django.http import JsonResponse, HttpResponseForbidden
+from django.http import JsonResponse, HttpResponseForbidden, HttpResponse
 from django.utils import timezone
 from django.db.models import Q, Count, Avg
 from django.urls import reverse
@@ -11,9 +11,68 @@ from django.views.decorators.http import require_POST
 from .models import UserProfile, Quiz, Question, Choice, QuizAttempt, Answer
 from .forms import UserRegistrationForm, QuizForm, QuestionForm, ChoiceFormSet, AnswerForm
 import json
+import traceback
+import sys
 
 def home(request):
     return render(request, 'home.html')
+
+def debug_view(request):
+    """Debug view to help diagnose issues"""
+    try:
+        # Get all users and their profiles
+        users = User.objects.all()
+        user_data = []
+        
+        for user in users:
+            try:
+                profile = UserProfile.objects.get(user=user)
+                profile_data = {
+                    'user_type': profile.user_type,
+                    'approval_status': profile.approval_status,
+                    'has_is_approved': hasattr(profile, 'is_approved'),
+                    'is_approved_value': profile.is_approved if hasattr(profile, 'is_approved') else None,
+                }
+            except UserProfile.DoesNotExist:
+                profile_data = "No UserProfile"
+            except Exception as e:
+                profile_data = f"Error: {str(e)}"
+            
+            user_data.append({
+                'username': user.username,
+                'is_superuser': user.is_superuser,
+                'is_staff': user.is_staff,
+                'is_active': user.is_active,
+                'profile': profile_data
+            })
+        
+        # Check if the UserProfile model has the is_approved property
+        from .models import UserProfile
+        has_is_approved = hasattr(UserProfile, 'is_approved')
+        
+        # Get request info
+        request_info = {
+            'path': request.path,
+            'method': request.method,
+            'user': str(request.user),
+            'is_authenticated': request.user.is_authenticated,
+        }
+        
+        # Return debug info
+        debug_info = {
+            'users': user_data,
+            'UserProfile_has_is_approved': has_is_approved,
+            'request': request_info,
+        }
+        
+        return JsonResponse(debug_info, json_dumps_params={'indent': 2})
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        error_details = {
+            'error': str(e),
+            'traceback': traceback.format_exception(exc_type, exc_value, exc_traceback)
+        }
+        return JsonResponse(error_details, status=500, json_dumps_params={'indent': 2})
 
 def user_login(request):
     if request.method == 'POST':
@@ -42,6 +101,9 @@ def user_login(request):
                     return redirect('login')
             except UserProfile.DoesNotExist:
                 messages.error(request, "User profile not found.")
+                return redirect('login')
+            except Exception as e:
+                messages.error(request, f"Login error: {str(e)}")
                 return redirect('login')
         else:
             messages.error(request, "Invalid username or password.")
@@ -557,3 +619,38 @@ def view_student_result(request, attempt_id):
     }
     
     return render(request, 'quiz_result.html', context)
+
+@login_required
+@require_POST
+def delete_quiz(request, quiz_id):
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    if user_profile.user_type != 'teacher':
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=request.user)
+    quiz.delete()
+    
+    messages.success(request, f"Quiz '{quiz.title}' has been deleted successfully.")
+    return redirect('teacher_dashboard')
+
+@login_required
+def quiz_results(request, quiz_id):
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    if user_profile.user_type != 'teacher':
+        return HttpResponseForbidden("You don't have permission to access this page.")
+    
+    quiz = get_object_or_404(Quiz, id=quiz_id, created_by=request.user)
+    attempts = QuizAttempt.objects.filter(quiz=quiz, end_time__isnull=False).order_by('-end_time')
+    
+    # Calculate statistics
+    total_attempts = attempts.count()
+    avg_score = attempts.aggregate(Avg('score'))['score__avg'] or 0
+    
+    context = {
+        'quiz': quiz,
+        'attempts': attempts,
+        'total_attempts': total_attempts,
+        'avg_score': avg_score,
+    }
+    
+    return render(request, 'quiz_results.html', context)
