@@ -5,6 +5,7 @@ from .models import UserProfile, Quiz, Question, Choice, Answer, QuizAttempt
 
 class UserRegistrationForm(UserCreationForm):
     USER_TYPE_CHOICES = (
+        ('admin', 'Admin'),
         ('teacher', 'Teacher'),
         ('student', 'Student'),
     )

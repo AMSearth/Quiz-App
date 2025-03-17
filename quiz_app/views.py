@@ -123,11 +123,16 @@ def register(request):
             
             # Create user profile with pending status (except for admin)
             approval_status = 'approved' if user_type == 'admin' else 'pending'
-            UserProfile.objects.create(
+            
+            # Create the user profile
+            profile = UserProfile.objects.create(
                 user=user, 
                 user_type=user_type,
                 approval_status=approval_status
             )
+            
+            # Add debug message
+            messages.info(request, f"Debug: Created profile with user_type={user_type}, approval_status={approval_status}")
             
             # Only auto-login admin users
             if user_type == 'admin':
@@ -139,6 +144,11 @@ def register(request):
             else:
                 messages.success(request, "Your registration has been submitted and is pending approval from an administrator. You will be notified when your account is approved.")
                 return redirect('login')
+        else:
+            # Add form error messages
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error in {field}: {error}")
     else:
         form = UserRegistrationForm()
     
@@ -154,6 +164,12 @@ def admin_dashboard(request):
     teachers = UserProfile.objects.filter(user_type='teacher')
     students = UserProfile.objects.filter(user_type='student')
     pending_approvals = UserProfile.objects.filter(approval_status='pending').order_by('registration_date')
+    
+    # Add debug message about pending approvals
+    messages.info(request, f"Debug: Found {pending_approvals.count()} pending approvals")
+    if pending_approvals.exists():
+        for profile in pending_approvals:
+            messages.info(request, f"Debug: Pending approval - {profile.user.username} ({profile.user_type})")
     
     return render(request, 'admin_dashboard.html', {
         'teachers': teachers,
