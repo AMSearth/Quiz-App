@@ -1,277 +1,123 @@
 #!/usr/bin/env python
 """
-Local development setup script for Quiz App
-This script helps with setting up the local development environment.
+Setup script for Quiz App local development
+Run this script on a new PC after cloning the repository
 """
 
 import os
 import sys
 import subprocess
-import argparse
 import getpass
-import random
-import string
-from pathlib import Path
+import django
+from django.core.management import call_command
 
-def create_venv():
-    """Create a virtual environment"""
-    if os.path.exists('venv'):
-        print("Virtual environment already exists")
-        return
-    
-    try:
-        print("Creating virtual environment...")
-        subprocess.run([sys.executable, '-m', 'venv', 'venv'], check=True)
-        print("Virtual environment created successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error creating virtual environment: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
+def run_command(command):
+    """Run a shell command and print output"""
+    print(f"\n>>> Running: {command}")
+    result = subprocess.run(command, shell=True, text=True)
+    if result.returncode != 0:
+        print(f"Command failed with exit code {result.returncode}")
+        return False
+    return True
 
-def install_requirements():
-    """Install requirements"""
-    # Determine the path to the Python executable in the virtual environment
-    if os.name == 'nt':  # Windows
-        python_path = os.path.join('venv', 'Scripts', 'python.exe')
-    else:  # Unix/Linux/Mac
-        python_path = os.path.join('venv', 'bin', 'python')
-    
-    if not os.path.exists(python_path):
-        print(f"Error: Virtual environment Python not found at {python_path}")
-        print("Please create a virtual environment first")
-        sys.exit(1)
-    
-    try:
-        print("Installing requirements...")
-        subprocess.run([python_path, '-m', 'pip', 'install', '-r', 'requirements.txt'], check=True)
-        print("Requirements installed successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error installing requirements: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
+def setup_database():
+    """Run migrations to set up the database"""
+    print("\n=== Setting up database ===")
+    if not run_command("python manage.py migrate"):
+        return False
+    return True
 
-def create_env_file():
-    """Create .env file if it doesn't exist"""
-    if os.path.exists('.env'):
-        print(".env file already exists")
-        return
+def create_superuser_with_profile():
+    """Create a superuser account with UserProfile"""
+    print("\n=== Creating superuser with UserProfile ===")
     
-    # Generate a random secret key
-    secret_key = ''.join(random.choice(string.ascii_letters + string.digits + string.punctuation) for _ in range(50))
+    # Set up Django environment
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'quiz_project.settings')
+    django.setup()
     
+    # Import models after Django setup
+    from django.contrib.auth.models import User
+    from quiz_app.models import UserProfile
+    
+    # Get superuser details
+    username = input("Enter username (default: admin): ") or "admin"
+    email = input("Enter email (default: admin@example.com): ") or "admin@example.com"
+    
+    # Check if user already exists
+    if User.objects.filter(username=username).exists():
+        print(f"User '{username}' already exists.")
+        user = User.objects.get(username=username)
+    else:
+        # Create superuser using management command
+        print(f"Creating superuser '{username}'...")
+        try:
+            # Use subprocess to handle password input securely
+            cmd = f'python manage.py createsuperuser --username {username} --email {email}'
+            if not run_command(cmd):
+                return False
+            
+            # Get the created user
+            user = User.objects.get(username=username)
+        except Exception as e:
+            print(f"Error creating superuser: {e}")
+            return False
+    
+    # Create or update UserProfile
     try:
-        print("Creating .env file...")
-        with open('.env', 'w') as f:
-            f.write(f"DEBUG=True\n")
-            f.write(f"SECRET_KEY={secret_key}\n")
-            f.write(f"# Add DATABASE_URL if you want to use PostgreSQL locally\n")
-            f.write(f"# DATABASE_URL=postgres://username:password@localhost:5432/quiz_app\n")
-        print(".env file created successfully")
-    except Exception as e:
-        print(f"Error creating .env file: {e}")
-        sys.exit(1)
-
-def run_migrations(python_path=None):
-    """Run migrations"""
-    # Determine the path to the Python executable in the virtual environment
-    if not python_path:
-        if os.name == 'nt':  # Windows
-            python_path = os.path.join('venv', 'Scripts', 'python.exe')
-        else:  # Unix/Linux/Mac
-            python_path = os.path.join('venv', 'bin', 'python')
-    
-    if not os.path.exists(python_path):
-        print(f"Error: Virtual environment Python not found at {python_path}")
-        print("Please create a virtual environment first")
-        sys.exit(1)
-    
-    try:
-        print("Running migrations...")
-        subprocess.run([python_path, 'manage.py', 'migrate'], check=True)
-        print("Migrations completed successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error running migrations: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
-
-def create_superuser(python_path=None):
-    """Create a superuser"""
-    # Determine the path to the Python executable in the virtual environment
-    if not python_path:
-        if os.name == 'nt':  # Windows
-            python_path = os.path.join('venv', 'Scripts', 'python.exe')
-        else:  # Unix/Linux/Mac
-            python_path = os.path.join('venv', 'bin', 'python')
-    
-    if not os.path.exists(python_path):
-        print(f"Error: Virtual environment Python not found at {python_path}")
-        print("Please create a virtual environment first")
-        sys.exit(1)
-    
-    # Get superuser credentials
-    username = input("Enter superuser username (default: admin): ") or "admin"
-    email = input("Enter superuser email (default: admin@example.com): ") or "admin@example.com"
-    password = getpass.getpass("Enter superuser password: ")
-    password_confirm = getpass.getpass("Confirm superuser password: ")
-    
-    if password != password_confirm:
-        print("Error: Passwords do not match")
-        sys.exit(1)
-    
-    try:
-        print("Creating superuser...")
-        # Set environment variables for non-interactive superuser creation
-        env = os.environ.copy()
-        env['DJANGO_SUPERUSER_PASSWORD'] = password
+        # Check if profile exists
+        profile, created = UserProfile.objects.get_or_create(user=user)
         
-        subprocess.run([
-            python_path, 'manage.py', 'createsuperuser',
-            '--username', username,
-            '--email', email,
-            '--noinput'
-        ], env=env, check=True)
+        if created:
+            # Set profile attributes for new profile
+            profile.user_type = 'admin'
+            profile.approval_status = 'approved'
+            profile.save()
+            print(f"Created UserProfile for '{username}' with admin privileges")
+        else:
+            # Update existing profile
+            profile.user_type = 'admin'
+            profile.approval_status = 'approved'
+            profile.save()
+            print(f"Updated UserProfile for '{username}' with admin privileges")
         
-        print(f"Superuser '{username}' created successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error creating superuser: {e}")
-        sys.exit(1)
+        return True
     except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
-
-def collect_static(python_path=None):
-    """Collect static files"""
-    # Determine the path to the Python executable in the virtual environment
-    if not python_path:
-        if os.name == 'nt':  # Windows
-            python_path = os.path.join('venv', 'Scripts', 'python.exe')
-        else:  # Unix/Linux/Mac
-            python_path = os.path.join('venv', 'bin', 'python')
-    
-    if not os.path.exists(python_path):
-        print(f"Error: Virtual environment Python not found at {python_path}")
-        print("Please create a virtual environment first")
-        sys.exit(1)
-    
-    try:
-        print("Collecting static files...")
-        subprocess.run([python_path, 'manage.py', 'collectstatic', '--noinput'], check=True)
-        print("Static files collected successfully")
-    except subprocess.CalledProcessError as e:
-        print(f"Error collecting static files: {e}")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
-
-def run_server(python_path=None):
-    """Run the development server"""
-    # Determine the path to the Python executable in the virtual environment
-    if not python_path:
-        if os.name == 'nt':  # Windows
-            python_path = os.path.join('venv', 'Scripts', 'python.exe')
-        else:  # Unix/Linux/Mac
-            python_path = os.path.join('venv', 'bin', 'python')
-    
-    if not os.path.exists(python_path):
-        print(f"Error: Virtual environment Python not found at {python_path}")
-        print("Please create a virtual environment first")
-        sys.exit(1)
-    
-    try:
-        print("Starting development server...")
-        subprocess.run([python_path, 'manage.py', 'runserver'], check=False)
-    except KeyboardInterrupt:
-        print("\nDevelopment server stopped")
-    except Exception as e:
-        print(f"Unexpected error: {e}")
-        sys.exit(1)
-
-def setup_all():
-    """Run all setup steps"""
-    create_venv()
-    install_requirements()
-    create_env_file()
-    
-    # Determine the path to the Python executable in the virtual environment
-    if os.name == 'nt':  # Windows
-        python_path = os.path.join('venv', 'Scripts', 'python.exe')
-    else:  # Unix/Linux/Mac
-        python_path = os.path.join('venv', 'bin', 'python')
-    
-    run_migrations(python_path)
-    create_superuser(python_path)
-    collect_static(python_path)
-    
-    print("\nSetup completed successfully!")
-    print("You can now run the development server with:")
-    if os.name == 'nt':  # Windows
-        print("venv\\Scripts\\python manage.py runserver")
-    else:  # Unix/Linux/Mac
-        print("venv/bin/python manage.py runserver")
-    
-    # Ask if the user wants to start the server now
-    start_server = input("\nDo you want to start the development server now? (y/n): ")
-    if start_server.lower() == 'y':
-        run_server(python_path)
+        print(f"Error creating UserProfile: {e}")
+        print("This might be because the UserProfile model is not properly defined.")
+        print("Please check your models.py file and make sure UserProfile has the correct fields.")
+        return False
 
 def main():
-    """Main function to parse arguments and run commands"""
-    parser = argparse.ArgumentParser(description='Local development setup script for Quiz App')
-    subparsers = parser.add_subparsers(dest='command', help='Command to run')
+    """Main function to run the setup"""
+    print("=== Quiz App Setup ===")
     
-    # Setup command
-    setup_parser = subparsers.add_parser('setup', help='Run all setup steps')
+    # Check if we're in the right directory
+    if not os.path.exists("manage.py"):
+        print("Error: manage.py not found. Please run this script from the project root directory.")
+        sys.exit(1)
     
-    # Venv command
-    venv_parser = subparsers.add_parser('venv', help='Create a virtual environment')
+    # Install dependencies
+    print("\n=== Installing dependencies ===")
+    if not run_command("pip install -r requirements.txt"):
+        print("Failed to install dependencies. Please install them manually.")
     
-    # Install command
-    install_parser = subparsers.add_parser('install', help='Install requirements')
+    # Set up database
+    if not setup_database():
+        print("Failed to set up database. Please run migrations manually.")
+        sys.exit(1)
     
-    # Env command
-    env_parser = subparsers.add_parser('env', help='Create .env file')
+    # Create superuser with profile
+    if not create_superuser_with_profile():
+        print("Failed to create superuser with profile. Please check the error messages above.")
     
-    # Migrate command
-    migrate_parser = subparsers.add_parser('migrate', help='Run migrations')
+    # Run the server
+    print("\n=== Setup complete! ===")
+    print("You can now run the development server with:")
+    print("python manage.py runserver")
     
-    # Superuser command
-    superuser_parser = subparsers.add_parser('createsuperuser', help='Create a superuser')
-    
-    # Collectstatic command
-    collectstatic_parser = subparsers.add_parser('collectstatic', help='Collect static files')
-    
-    # Runserver command
-    runserver_parser = subparsers.add_parser('runserver', help='Run the development server')
-    
-    args = parser.parse_args()
-    
-    # Run the appropriate command
-    if args.command == 'setup':
-        setup_all()
-    elif args.command == 'venv':
-        create_venv()
-    elif args.command == 'install':
-        install_requirements()
-    elif args.command == 'env':
-        create_env_file()
-    elif args.command == 'migrate':
-        run_migrations()
-    elif args.command == 'createsuperuser':
-        create_superuser()
-    elif args.command == 'collectstatic':
-        collect_static()
-    elif args.command == 'runserver':
-        run_server()
-    else:
-        # If no command is provided, run setup
-        setup_all()
+    run_server = input("Would you like to run the server now? (y/n): ").lower() == 'y'
+    if run_server:
+        run_command("python manage.py runserver")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main() 
