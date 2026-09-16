@@ -1,7 +1,5 @@
 # Quiz App
 
-Version: 1.0.0
-
 An interactive platform for creating and taking quizzes online. Perfect for teachers, students, and educational institutions.
 
 ## Features
