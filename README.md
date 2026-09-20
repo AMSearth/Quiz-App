@@ -181,6 +181,3 @@ For more detailed information, see the following documents:
 - [Deployment Checklist](./DEPLOYMENT_CHECKLIST.md)
 - [Changelog](./CHANGELOG.md)
 
-## License
-
-Created by Ajinkya Shinde 
